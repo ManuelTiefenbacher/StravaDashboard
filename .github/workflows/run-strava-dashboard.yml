@@ -33,4 +33,4 @@ jobs:
       # Run your Python script
       - name: Run Python script
         run: |
-          python your_script.py  # Replace with the path to your Python script
+          python StravaDashboard.py  # Replace with the path to your Python script
