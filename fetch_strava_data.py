@@ -1,11 +1,5 @@
 ﻿import requests
-import json
-from datetime import datetime
-import ssl
-import urllib3
 import httpx
-from supabase import create_client, Client
-import certifi
 
 
 def fetch_strava_data():
