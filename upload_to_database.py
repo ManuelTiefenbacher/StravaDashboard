@@ -4,10 +4,11 @@ import os
 
 # Connect to DB
 conn = psycopg2.connect(
-    host=os.getenv('DB_HOST'),
-    dbname=os.getenv('DB_NAME'),
-    user=os.getenv('DB_USER'),
-    password=os.getenv('DB_PASSWORD')
+    host='manueltiefenbacher998.grafana.net',
+    dbname='grafana-postgresql-datasource',
+    port='5432',
+    user='grafana_user',
+    password='superSecretPassword123!'
 )
 cur = conn.cursor()
 
