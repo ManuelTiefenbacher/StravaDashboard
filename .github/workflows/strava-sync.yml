@@ -1,29 +1,14 @@
-name: Sync Strava to DB
+stages:
+  - generate
 
-on:
-  schedule:
-    - cron: '0 * * * *'  # Every hour
-  workflow_dispatch:
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install deps
-        run: pip install requests psycopg2-binary
-
-      - name: Fetch Strava data
-        run: python fetch_strava_data.py
-        env:
-          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
-          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
-          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+generate_json:
+  stage: generate
+  image: python:3.10
+  script:
+    - pip install -r requirements.txt  # if needed
+    - python fetch_strava_data.py
+    - git config --global user.email "manueltiefenbacher998@gmail.com"
+    - git config --global user.name "ManuelTiefenbacher"
+    - git add StravaDashboard/output/activities.json
+    - git commit -m "Update data.json [ci skip]" || echo "No changes to commit"
+    - git push https://<CI_USER>:<CI_TOKEN>@gitlab.com/<username>/<repo>.git HEAD:main
