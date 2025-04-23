@@ -22,12 +22,14 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-          pip install -r requirements.txt  # If you have dependencies
-          pip install requests
+          pip install --upgrade pip  # Make sure pip is up to date
+          pip install -r requirements.txt  # If you have a requirements.txt file
+          pip install requests  # Ensure requests is installed if not in requirements.txt
 
       - name: Run Python script to generate JSON
         run: |
-          python fetch_strava_data.py
+          source venv/bin/activate  # Ensure virtual environment is activated
+          python generate_data.py
 
       - name: Configure Git
         run: |
