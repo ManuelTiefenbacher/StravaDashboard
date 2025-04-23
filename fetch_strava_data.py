@@ -1,6 +1,7 @@
 ﻿import requests
 import json
 import os
+from datetime import datetime
 
 
 def fetch_strava_data():
@@ -47,5 +48,6 @@ def fetch_strava_data():
 if __name__ == '__main__':
     os.makedirs('StravaDashboard/output', exist_ok=True)
     activities = fetch_strava_data()
-    with open("StravaDashboard/output/activities.json", "w") as f:
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    with open(f"StravaDashboard/output/{timestamp}_StravaActivities.json", "w") as f:
         json.dump(activities, f, indent=2)
