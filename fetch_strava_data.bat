@@ -1,0 +1,2 @@
+python fetch_strava_data.py
+pause

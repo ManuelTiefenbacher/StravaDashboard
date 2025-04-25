@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activity Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #1e1e1e;
+      color: #fff;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      background-color: #2a2a2a;
+    }
+    .tab {
+      padding: 1rem 2rem;
+      cursor: pointer;
+      color: #aaa;
+    }
+    .tab.active {
+      color: #00bcd4;
+      border-bottom: 3px solid #00bcd4;
+    }
+    .content {
+      display: none;
+      padding: 2rem;
+    }
+    .content.active {
+      display: block;
+    }
+    .charts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      max-width: 100%;
+      margin: auto;
+    }
+    canvas {
+      background-color: #333;
+      border-radius: 10px;
+      padding: 1rem;
+      width: 100% !important;
+      height: auto !important;
+    }
+    .ranking-section h3 {
+      border-bottom: 1px solid #444;
+      padding-bottom: 0.5rem;
+    }
+    .ranking-list {
+      list-style: none;
+      padding: 0;
+    }
+    .ranking-list li {
+      background-color: #2a2a2a;
+      padding: 0.75rem 1rem;
+      border-radius: 5px;
+      margin: 0.5rem 0;
+    }
+	.ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2em;
+    }
+    .ranking-table th,
+    .ranking-table td {
+      border: 1px solid #1e1e1e;
+      padding: 8px;
+      text-align: left;
+	  font-size: 0.85rem;
+      padding: 4px 8px; /* evtl. auch den Zellabstand verkleinern */
+    }
+    .ranking-table th {
+      background-color: #2a2a2a;
+    }
+	.ranking-section {
+	  flex: 1 1 auto; /* lässt die Breite anpassen, aber nicht erzwungen voll ausdehnen */
+	  max-width: 300px; /* oder was für deine Inhalte passt */
+	  min-width: 250px; /* verhindert zu kleine Darstellung */
+	  box-sizing: border-box;
+	}
+	.chart-container {
+	  flex: 1 1 auto; /* lässt die Breite anpassen, aber nicht erzwungen voll ausdehnen */
+	  max-width: 700px; /* oder was für deine Inhalte passt */
+	  min-width: 250px; /* verhindert zu kleine Darstellung */
+	  box-sizing: border-box;
+	}
+	.container {
+	  display: flex;
+	  flex-wrap: wrap; /* ermöglicht Zeilenumbruch */
+	  justify-content: center; /* zentriert die Elemente horizontal */
+	  gap: 2rem; /* Abstand zwischen den Elementen */
+	  padding: 1rem;
+	}
+	/* Stack vertically on small screens */
+	@media (max-width: 700px) {
+	  .container {
+		flex-direction: column;
+	  }
+	}
+  </style>
+</head>
+<body>
+  <div class="tabs">
+    <div class="tab active" data-tab="outdoor">Outdoor</div>
+    <div class="tab" data-tab="indoor">Indoor</div>
+    <div class="tab" data-tab="running">Running</div>
+  </div>
+
+  <div class="content active" id="outdoor">
+	<div class="container">
+	  <div class="ranking-section" id="outdoorRanking"></div>
+	  <div class="chart-container" id="outdoorActivityChartContainer"></div>
+	  <div class="chart-container" id="powerChartContainer"></div>
+	</div>
+  </div>
+
+  <div class="content" id="indoor">
+    <div class="chart-container" id="indoorActivityChartContainer"></div>
+    <div class="ranking-section" id="indoorRanking"></div>
+  </div>
+
+  <div class="content" id="running">
+    <div class="chart-container" id="runningActivityChartContainer"></div>
+    <div class="ranking-section" id="runningRanking"></div>
+  </div>
+
+  <script>
+    const tabElements = document.querySelectorAll('.tab');
+    const contentElements = document.querySelectorAll('.content');
+
+    tabElements.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabElements.forEach(t => t.classList.remove('active'));
+        contentElements.forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    const sampleData = () => Array.from({ length: 7 }, () => Math.floor(Math.random() * 20));
+
+	const createRankingSection = (containerId, title, rankings) => {
+		const container = document.getElementById(containerId);
+
+		const h3 = document.createElement('h3');
+		h3.textContent = title;
+		container.appendChild(h3);
+
+		const table = document.createElement('table');
+		table.classList.add('ranking-table');
+
+		// Header Row
+		const thead = document.createElement('thead');
+		const headerRow = document.createElement('tr');
+		const headers = ['Top 3', ...rankings.map(r => r.label.match(/Last .*/)?.[0] || '')];
+		headers.forEach(text => {
+			const th = document.createElement('th');
+			th.textContent = text;
+			headerRow.appendChild(th);
+		});
+		thead.appendChild(headerRow);
+		table.appendChild(thead);
+
+		// Data Rows
+		const tbody = document.createElement('tbody');
+		for (let i = 0; i < 3; i++) { // Top 3 entries
+			const row = document.createElement('tr');
+
+			const positionCell = document.createElement('td');
+			positionCell.textContent = `${i + 1}.`;
+			row.appendChild(positionCell);
+
+			rankings.forEach(ranking => {
+				const cell = document.createElement('td');
+				const entry = ranking.entries[i] || '';
+				cell.textContent = entry;
+				row.appendChild(cell);
+			});
+
+			tbody.appendChild(row);
+		}
+		table.appendChild(tbody);
+
+		container.appendChild(table);
+	};
+	
+	const createActivityChart = (containerId, activityData, activityLabel, colorSet) => {
+		const container = document.getElementById(containerId);
+		const canvas = document.createElement('canvas');
+		container.appendChild(canvas);
+
+		new Chart(canvas.getContext('2d'), {
+			type: 'line',
+			data: {
+				labels: activityData.time,
+				datasets: [
+					{
+						label: 'Speed (km/h)',
+						data: activityData.speed,
+						borderColor: colorSet.speed,
+						backgroundColor: colorSet.speed + '33',
+						fill: false,
+						tension: 0.3,
+						yAxisID: 'y1',
+						pointRadius: 0.3,
+						borderWidth: 1,
+						borderDash: [5, 5]
+					},
+					{
+						label: 'Cadence (rpm)',
+						data: activityData.cadence,
+						borderColor: colorSet.cadence,
+						backgroundColor: colorSet.cadence + '33',
+						fill: false,
+						tension: 0.3,
+						yAxisID: 'y2',
+						pointRadius: 0.5,
+						borderWidth: 1,
+						borderDash: [5, 5]
+					},
+					{
+						label: 'Power (W)',
+						data: activityData.power,
+						borderColor: colorSet.power,
+						backgroundColor: colorSet.power + '33',
+						fill: true,
+						tension: 0.3,
+						pointRadius: 1,
+						yAxisID: 'y3'
+					},
+					{
+						label: 'Heart Rate (bpm)',
+						data: activityData.heartRate,
+						borderColor: colorSet.heartRate,
+						backgroundColor: colorSet.heartRate + '33',
+						borderWidth: 1,
+						fill: false,
+						tension: 0.3,
+						pointRadius: 0.1,
+						yAxisID: 'y4'
+					}
+				]
+			},
+			options: {
+				responsive: true,
+				plugins: {
+					title: {
+						display: true,
+						text: activityLabel,
+						color: 'white',
+						font: {
+						    size: 24 // <- This sets the font size (affects "height")
+						}
+					  },
+					legend: {
+						labels: {
+							color: 'white'
+						}
+					}
+				},
+				scales: {
+					x: {
+						ticks: { color: 'white' },
+						grid: { color: '#444' }
+					},
+					y1: {
+						position: 'left',
+						title: { display: true, text: 'Speed (km/h)', color: colorSet.speed },
+						ticks: { color: colorSet.speed },
+						grid: { color: '#444' },
+						min: 0,
+						max: Math.ceil(Math.max(...activityData.speed) * 4)
+					},
+					y2: {
+						position: 'right',
+						title: { display: true, text: 'Cadence (rpm)', color: colorSet.cadence },
+						ticks: { color: colorSet.cadence },
+						grid: { drawOnChartArea: false },
+						min: 0,
+						max: Math.ceil(Math.max(...activityData.cadence) * 2.2)
+					},
+					y3: {
+						position: 'right',
+						title: { display: true, text: 'Power (W)', color: colorSet.power },
+						ticks: { color: colorSet.power },
+						grid: { drawOnChartArea: false },
+						min: 0,
+						max: Math.ceil(Math.max(...activityData.power) * 1.5)
+					},
+					y4: {
+						position: 'right',
+						title: { display: true, text: 'Heart Rate (bpm)', color: colorSet.heartRate },
+						ticks: { color: colorSet.heartRate },
+						grid: { drawOnChartArea: false },
+						min: 0,
+						max: Math.ceil(Math.max(...activityData.heartRate) * 1)
+					}
+				}
+			}
+		});
+	};
+	
+	const createPowerChart = (containerId, activityData, activityLabel, colorSet) => {
+		const container = document.getElementById(containerId);
+		const canvas = document.createElement('canvas');
+		container.appendChild(canvas);
+
+		new Chart(canvas.getContext('2d'), {
+			type: 'line',
+			data: {
+				labels: activityData.time,
+				datasets: [
+					{
+						label: 'Speed (km/h)',
+						data: activityData.power,
+						borderColor: colorSet.power,
+						backgroundColor: colorSet.power + '33',
+						fill: false,
+						tension: 0.3,
+						yAxisID: 'y1',
+						pointRadius: 0.3,
+						borderWidth: 1,
+						borderDash: [5, 5]
+					}
+				]
+			},
+			options: {
+				responsive: true,
+				plugins: {
+					title: {
+						display: true,
+						text: activityLabel,
+						color: 'white',
+						font: {
+						    size: 24 // <- This sets the font size (affects "height")
+						}
+					  },
+					legend: {
+						labels: {
+							color: 'white'
+						}
+					}
+				},
+				scales: {
+					x: {
+						ticks: { color: 'white' },
+						grid: { color: '#444' }
+					},
+					y1: {
+						position: 'left',
+						title: { display: true, text: 'Power (km/h)', color: colorSet.power },
+						ticks: { color: colorSet.power },
+						grid: { color: '#444' },
+						min: 0,
+						max: Math.ceil(Math.max(...activityData.power) * 4)
+					}
+				}
+			}
+		});
+	};
+	
+	async function loadActivityData() {
+		try {
+			const response = await fetch('2025-04-24_22-16-23_latestActivity.json'); // JSON-Datei laden
+			
+			if (!response.ok) {
+				throw new Error('Netzwerkantwort war nicht ok');
+			}
+
+			const jsonData = await response.json();
+			console.log('Geladene Daten:', jsonData); // Füge eine Konsolenausgabe hinzu
+
+			// Zeitdaten generieren (angenommen, 1 Datensatz entspricht 1 Sekunde)
+			const time = Array.from({ length: jsonData.cadence.data.length }, (_, i) => {
+				const min = String(Math.floor(i / 60)).padStart(2, '0');
+				const sec = String(i % 60).padStart(2, '0');
+				return `${min}:${sec}`;
+			});
+
+			const activityData = {
+				time: time,  // Generierte Zeit aus den Daten
+				speed: jsonData.distance.data,  // Entfernungsdaten als "Speed"
+				cadence: jsonData.cadence.data,  // Kadenzdaten
+				power: jsonData.distance.data.map(d => d * 0.5),  // Beispiel für Power (angenommen)
+				heartRate: jsonData.heartrate.data  // Herzfrequenzdaten
+			};
+
+			return activityData; // Gib die geladenen Daten zurück
+		} catch (error) {
+			console.error('Fehler beim Laden der JSON-Daten:', error);
+		}
+	}
+
+	const colorSet = {
+		speed: '#00bcd4',
+		cadence: '#8bc34a',
+		power: '#ff9800',
+		heartRate: '#f44336'
+	};
+
+	// Asynchrone Funktion, um die Daten zu laden und das Diagramm zu erstellen
+	async function initializeChart() {
+		const activityData = await loadActivityData(); // Lade die Daten
+
+		if (activityData) { // Stelle sicher, dass die Daten vorhanden sind
+			createActivityChart('outdoorActivityChartContainer', activityData, 'Latest Ride', colorSet);
+			createPowerChart('powerChartContainer', activityData, 'PowerChart', colorSet);
+		} else {
+			console.error('Keine Aktivitätsdaten verfügbar.');
+		}
+	}
+
+	// Starte den Prozess
+	initializeChart();
+
+    createRankingSection('outdoorRanking', 'Outdoor Rankings', [
+      { label: 'Top 3 Outdoor Rides - Last 4 Weeks', entries: ['Ride A - 67 km', 'Ride B - 59 km', 'Ride C - 55 km'] },
+      { label: 'Top 3 Outdoor Rides - Last 3 Months', entries: ['Ride D - 102 km', 'Ride E - 98 km', 'Ride F - 91 km'] },
+      { label: 'Top 3 Outdoor Rides - Last Year', entries: ['Ride G - 150 km', 'Ride H - 145 km', 'Ride I - 142 km'] },
+    ]);
+
+    createRankingSection('indoorRanking', 'Indoor Rankings', [
+      { label: 'Top 3 Indoor Rides - Last 4 Weeks', entries: ['Ride A - 43 km', 'Ride B - 39 km', 'Ride C - 36 km'] },
+      { label: 'Top 3 Indoor Rides - Last 3 Months', entries: ['Ride D - 77 km', 'Ride E - 72 km', 'Ride F - 68 km'] },
+      { label: 'Top 3 Indoor Rides - Last Year', entries: ['Ride G - 105 km', 'Ride H - 101 km', 'Ride I - 96 km'] },
+    ]);
+
+    createRankingSection('runningRanking', 'Running Rankings', [
+      { label: 'Top 3 Runs - Last 4 Weeks', entries: ['Run A - 18 km', 'Run B - 15 km', 'Run C - 14 km'] },
+      { label: 'Top 3 Runs - Last 3 Months', entries: ['Run D - 25 km', 'Run E - 22 km', 'Run F - 21 km'] },
+      { label: 'Top 3 Runs - Last Year', entries: ['Run G - 30 km', 'Run H - 29 km', 'Run I - 28 km'] },
+    ]);
+  </script>
+</body>
+</html>
