@@ -113,7 +113,7 @@ if __name__ == "__main__":
     activities = getAllActivities(headers)
     activityIds = find_all_ids(activities)
     print(activityIds)
-    for activityId in activityIds:
+    for activityId in activityIds[:5]:
         getSingleActivity(headers, activityId)
 
     print("done")
