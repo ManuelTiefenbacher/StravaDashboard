@@ -69,7 +69,7 @@ def getAllActivities(headers):
         print("Error fetching activities:", activity_response.text)
         
 def getSingleActivity(headers, activityId):
-    getSingleActivity_url = f'https://www.strava.com/api/v3/activities/{activityId}/streams?keys=heartrate,cadence,power,speed&key_by_type=true'
+    getSingleActivity_url = f'https://www.strava.com/api/v3/activities/{activityId}/streams?keys=time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth&key_by_type=true'
     print(getSingleActivity_url)
     
     activity_response = requests.get(getSingleActivity_url, headers=headers)
@@ -99,5 +99,5 @@ if __name__ == "__main__":
         'Authorization': f'Bearer {token}'
     }
     getAllActivities(headers)
-    activityId = '14275726812'
+    activityId = '14265996018'
     getSingleActivity(headers, activityId)
