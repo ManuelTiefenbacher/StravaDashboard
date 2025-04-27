@@ -38,6 +38,6 @@ jobs:
 
       - name: Commit and push generated data
         run: |
-          git add StravaDashboard/output
+          git add output
           git commit -m "Update activities.json [ci skip]" || echo "No changes"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
