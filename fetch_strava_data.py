@@ -60,11 +60,12 @@ def getAllActivities(headers):
 
         # Save to file
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        os.makedirs("StravaDashboard/output", exist_ok=True)
-        filename = f"StravaDashboard/output/{timestamp}_allActivities.json"
+        os.makedirs("output", exist_ok=True)
+        filename = f"output/{timestamp}_allActivities.json"
         with open(filename, "w") as f:
             json.dump(activities, f, indent=2)
         print(f"📁 Activities saved to {filename}")
+        return activities
     else:
         print("Error fetching activities:", activity_response.text)
         
@@ -79,15 +80,26 @@ def getSingleActivity(headers, activityId):
 
         # Save to file
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        os.makedirs("StravaDashboard/output", exist_ok=True)
-        filename = f"StravaDashboard/output/{timestamp}_activity_{activityId}.json"
+        os.makedirs("output/activities", exist_ok=True)
+        filename = f"output/activities/StravaActivity_{activityId}.json"
         with open(filename, "w") as f:
             json.dump(activities, f, indent=2)
         print(f"📁 Activities saved to {filename}")
     else:
         print("Error fetching activities:", activity_response.text)
 
-
+def find_all_ids(obj):
+    ids = []
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key.lower() == 'id':  # also catches 'ID', 'Id', etc.
+                ids.append(value)
+            else:
+                ids.extend(find_all_ids(value))
+    elif isinstance(obj, list):
+        for item in obj:
+            ids.extend(find_all_ids(item))
+    return ids
 
 # Beispielnutzung:
 if __name__ == "__main__":
@@ -98,6 +110,10 @@ if __name__ == "__main__":
     headers = {
         'Authorization': f'Bearer {token}'
     }
-    getAllActivities(headers)
-    activityId = '14265996018'
-    getSingleActivity(headers, activityId)
+    activities = getAllActivities(headers)
+    activityIds = find_all_ids(activities)
+    print(activityIds)
+    for activityId in activityIds:
+        getSingleActivity(headers, activityId)
+
+    print("done")
